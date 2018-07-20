@@ -199,7 +199,7 @@ static int at_response_ok (struct pvt* pvt, at_res_t res)
 				{
 					pvt->timeout = DATA_READ_TIMEOUT;
 					pvt->initialized = 1;
-					ast_verb (3, "[%s] Dongle initialized and ready\n", PVT_ID(pvt));
+					ast_log (LOG_NOTICE, "[%s] Dongle initialized and ready\n", PVT_ID(pvt));
 					manager_event_device_status(PVT_ID(pvt), "Initialize");
 				}
 				break;

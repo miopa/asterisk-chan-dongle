@@ -345,7 +345,7 @@ static void disconnect_dongle (struct pvt* pvt)
 	ast_copy_string (PVT_STATE(pvt, data_tty),  CONF_UNIQ(pvt, data_tty), sizeof (PVT_STATE(pvt, data_tty)));
 	ast_copy_string (PVT_STATE(pvt, audio_tty), CONF_UNIQ(pvt, audio_tty), sizeof (PVT_STATE(pvt, audio_tty)));
 
-	ast_verb (3, "[%s] Dongle has disconnected\n", PVT_ID(pvt));
+	ast_log (LOG_NOTICE, "[%s] Dongle has disconnected\n", PVT_ID(pvt));
 
 	manager_event_device_status(PVT_ID(pvt), "Disconnect");
 }
