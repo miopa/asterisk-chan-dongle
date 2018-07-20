@@ -25,6 +25,7 @@
 #include "helpers.h"				/* ITEMS_OF() send_ccwa_set() send_reset() send_sms() send_ussd() */
 
 static char * espace_newlines(const char * text);
+static char * unescape_newlines(const char * text);
 
 static int manager_show_devices (struct mansession* s, const struct message* m)
 {
@@ -195,7 +196,8 @@ static int manager_send_sms (struct mansession* s, const struct message* m)
 		return 0;
 	}
 
-	msg = send_sms(device, number, message, validity, report, &status, &msgid);
+	char * unescaped = unescape_newlines(message);
+	msg = send_sms(device, number, unescaped, validity, report, &status, &msgid);
 	snprintf (buf, sizeof (buf), "[%s] %s\r\nID: %p", device, msg, msgid);
 	if(status)
 	{
@@ -206,6 +208,7 @@ static int manager_send_sms (struct mansession* s, const struct message* m)
 		astman_send_error(s, m, buf);
 	}
 
+	ast_free(unescaped);
 	return 0;
 }
 
@@ -348,6 +351,43 @@ static char * espace_newlines(const char * text)
 	}
 
 	return escaped;
+}
+
+#/* */
+static char * unescape_newlines(const char * text)
+{
+	char * unescaped;
+	int i, j;
+	for(j = i = 0; text[i]; ++i)
+	{
+		if(text[i] != '\\' || !(text[i + 1] == 'r' || text[i + 1] == 'n'))
+			j++;
+	}
+	unescaped = ast_malloc(j + 1);
+
+	if(unescaped)
+	{
+		for(j = i = 0; text[i]; ++i, ++j)
+		{
+			if(text[i] == '\\' && text[i + 1] == 'r')
+			{
+				unescaped[j] = '\r';
+				i++;
+			}
+			else if(text[i] == '\\' && text[i + 1] == 'n')
+			{
+				unescaped[j] = '\n';
+				i++;
+			}
+			else
+			{
+				unescaped[j] = text[i];
+			}
+		}
+		unescaped[j] = 0;
+	}
+
+	return unescaped;
 }
 
 #/* */
