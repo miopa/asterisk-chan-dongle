@@ -26,7 +26,6 @@
 #include "error.h"
 
 static char * espace_newlines(const char * text);
-static char * unescape_newlines(const char * text);
 
 static int manager_show_devices (struct mansession* s, const struct message* m)
 {
@@ -182,12 +181,15 @@ static int manager_send_sms (struct mansession* s, const struct message* m)
 		return 0;
 	}
 
-	char * unescaped_msg = unescape_newlines(message);
+	size_t msg_size = strlen(message) + 1;
+	char* unescaped_msg = ast_malloc(msg_size);
+	ast_copy_string(unescaped_msg, message, msg_size);
+	ast_unescape_c(unescaped_msg);
 	int res = send_sms(device, number, unescaped_msg, validity, report, payload, strlen(payload) + 1);
+	ast_free(unescaped_msg);
 	snprintf(buf, sizeof (buf), "[%s] %s", device, res < 0 ? error2str(chan_dongle_err) : "SMS queued for send");
 	(res == 0 ? astman_send_ack : astman_send_error)(s, m, buf);
 
-	ast_free(unescaped_msg);
 	return 0;
 }
 
@@ -298,43 +300,6 @@ static char * espace_newlines(const char * text)
 	}
 
 	return escaped;
-}
-
-#/* */
-static char * unescape_newlines(const char * text)
-{
-	char * unescaped;
-	int i, j;
-	for(j = i = 0; text[i]; ++i)
-	{
-		if(text[i] != '\\' || !(text[i + 1] == 'r' || text[i + 1] == 'n'))
-			j++;
-	}
-	unescaped = ast_malloc(j + 1);
-
-	if(unescaped)
-	{
-		for(j = i = 0; text[i]; ++i, ++j)
-		{
-			if(text[i] == '\\' && text[i + 1] == 'r')
-			{
-				unescaped[j] = '\r';
-				i++;
-			}
-			else if(text[i] == '\\' && text[i + 1] == 'n')
-			{
-				unescaped[j] = '\n';
-				i++;
-			}
-			else
-			{
-				unescaped[j] = text[i];
-			}
-		}
-		unescaped[j] = 0;
-	}
-
-	return unescaped;
 }
 
 #/* */
